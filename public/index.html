@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Manager – Pruebas IA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      padding: 1.5rem 2rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    header h1 { font-size: 1.8rem; letter-spacing: .5px; }
+    header p  { opacity: .85; margin-top: .3rem; font-size: .95rem; }
+
+    main {
+      max-width: 720px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    /* ── Form ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #4a5568; }
+
+    .form-group { display: flex; flex-direction: column; gap: .3rem; margin-bottom: .9rem; }
+    .form-group label { font-size: .85rem; font-weight: 600; color: #718096; }
+    .form-group input,
+    .form-group textarea {
+      border: 1.5px solid #cbd5e0;
+      border-radius: 8px;
+      padding: .55rem .75rem;
+      font-size: .95rem;
+      transition: border-color .2s;
+      resize: vertical;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus { outline: none; border-color: #667eea; }
+
+    .btn {
+      display: inline-block;
+      padding: .55rem 1.3rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary   { background: #667eea; color: #fff; }
+    .btn-primary:hover   { opacity: .88; }
+    .btn-secondary { background: #e2e8f0; color: #4a5568; }
+    .btn-secondary:hover { opacity: .8; }
+    .btn-danger    { background: #fc8181; color: #fff; }
+    .btn-danger:hover    { opacity: .85; }
+    .btn-sm { padding: .3rem .8rem; font-size: .8rem; }
+
+    /* ── Filter bar ── */
+    .filters { display: flex; gap: .6rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-btn {
+      background: #e2e8f0; color: #4a5568; border: none; border-radius: 20px;
+      padding: .35rem 1rem; cursor: pointer; font-size: .85rem; font-weight: 600;
+      transition: background .2s, color .2s;
+    }
+    .filter-btn.active { background: #667eea; color: #fff; }
+
+    /* ── Task list ── */
+    #task-list { display: flex; flex-direction: column; gap: .75rem; }
+
+    .task-item {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.07);
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: flex-start;
+      gap: .9rem;
+      transition: box-shadow .2s;
+    }
+    .task-item:hover { box-shadow: 0 3px 14px rgba(0,0,0,.12); }
+    .task-item.completed { opacity: .6; }
+
+    .task-checkbox {
+      width: 1.2rem; height: 1.2rem; cursor: pointer;
+      accent-color: #667eea; flex-shrink: 0; margin-top: .15rem;
+    }
+
+    .task-content { flex: 1; min-width: 0; }
+    .task-title {
+      font-weight: 700; font-size: 1rem; word-break: break-word;
+    }
+    .task-item.completed .task-title { text-decoration: line-through; color: #a0aec0; }
+    .task-description {
+      font-size: .85rem; color: #718096; margin-top: .25rem; word-break: break-word;
+    }
+    .task-meta { font-size: .75rem; color: #a0aec0; margin-top: .4rem; }
+
+    .task-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+
+    /* ── Edit modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 12px; padding: 1.5rem;
+      width: min(460px, 95vw);
+      box-shadow: 0 8px 30px rgba(0,0,0,.25);
+    }
+    .modal h2 { margin-bottom: 1rem; font-size: 1.1rem; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1rem; }
+
+    /* ── Empty / error states ── */
+    .empty { text-align: center; color: #a0aec0; padding: 2rem; font-size: .95rem; }
+    .alert {
+      padding: .7rem 1rem; border-radius: 8px; margin-bottom: 1rem;
+      font-size: .9rem; font-weight: 600;
+    }
+    .alert-error   { background: #fed7d7; color: #c53030; }
+    .alert-success { background: #c6f6d5; color: #276749; }
+
+    /* ── Stats bar ── */
+    .stats { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .stat {
+      background: #fff; border-radius: 8px; padding: .5rem 1rem;
+      font-size: .85rem; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .stat strong { color: #667eea; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>📋 Task Manager</h1>
+  <p>Full-stack demo — Pruebas IA</p>
+</header>
+
+<main>
+
+  <!-- alert area -->
+  <div id="alert" hidden></div>
+
+  <!-- stats -->
+  <div class="stats">
+    <div class="stat">Total: <strong id="stat-total">0</strong></div>
+    <div class="stat">Pending: <strong id="stat-pending">0</strong></div>
+    <div class="stat">Done: <strong id="stat-done">0</strong></div>
+  </div>
+
+  <!-- create form -->
+  <div class="card">
+    <h2>➕ New Task</h2>
+    <form id="create-form" novalidate>
+      <div class="form-group">
+        <label for="inp-title">Title *</label>
+        <input id="inp-title" type="text" placeholder="What needs to be done?" required maxlength="200" />
+      </div>
+      <div class="form-group">
+        <label for="inp-desc">Description</label>
+        <textarea id="inp-desc" rows="2" placeholder="Optional details…" maxlength="1000"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Add Task</button>
+    </form>
+  </div>
+
+  <!-- filters -->
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="pending">Pending</button>
+    <button class="filter-btn" data-filter="completed">Completed</button>
+  </div>
+
+  <!-- task list -->
+  <div id="task-list"></div>
+
+</main>
+
+<!-- edit modal -->
+<div id="edit-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+  <div class="modal">
+    <h2 id="edit-modal-title">✏️ Edit Task</h2>
+    <form id="edit-form" novalidate>
+      <input type="hidden" id="edit-id" />
+      <div class="form-group">
+        <label for="edit-title">Title *</label>
+        <input id="edit-title" type="text" required maxlength="200" />
+      </div>
+      <div class="form-group">
+        <label for="edit-desc">Description</label>
+        <textarea id="edit-desc" rows="3" maxlength="1000"></textarea>
+      </div>
+      <div class="form-group">
+        <label style="flex-direction:row;gap:.5rem;display:flex;align-items:center;cursor:pointer;">
+          <input type="checkbox" id="edit-completed" /> Completed
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="edit-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API = '/api/tasks';
+  let allTasks = [];
+  let currentFilter = 'all';
+
+  // ── Utility ──────────────────────────────────────────────────────────────────
+
+  function showAlert(msg, type = 'error') {
+    const el = document.getElementById('alert');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.hidden = false;
+    setTimeout(() => { el.hidden = true; }, 3500);
+  }
+
+  function formatDate(iso) {
+    return new Date(iso).toLocaleString();
+  }
+
+  // ── Fetch helpers ─────────────────────────────────────────────────────────────
+
+  async function apiFetch(url, opts = {}) {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    if (res.status === 204) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+
+  function renderTasks() {
+    const filtered = allTasks.filter(t => {
+      if (currentFilter === 'pending')   return !t.completed;
+      if (currentFilter === 'completed') return  t.completed;
+      return true;
+    });
+
+    const list = document.getElementById('task-list');
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty">No tasks here — add one above! 🎉</div>';
+    } else {
+      list.innerHTML = filtered.map(t => `
+        <div class="task-item${t.completed ? ' completed' : ''}" data-id="${t.id}">
+          <input
+            class="task-checkbox"
+            type="checkbox"
+            ${t.completed ? 'checked' : ''}
+            aria-label="Toggle completed"
+            onchange="toggleTask(${t.id}, this.checked)"
+          />
+          <div class="task-content">
+            <div class="task-title">${escHtml(t.title)}</div>
+            ${t.description ? `<div class="task-description">${escHtml(t.description)}</div>` : ''}
+            <div class="task-meta">Created: ${formatDate(t.created_at)}</div>
+          </div>
+          <div class="task-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openEdit(${t.id})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTask(${t.id})">Delete</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Stats
+    const total     = allTasks.length;
+    const done      = allTasks.filter(t => t.completed).length;
+    const pending   = total - done;
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-done').textContent    = done;
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  // ── Load ──────────────────────────────────────────────────────────────────────
+
+  async function loadTasks() {
+    try {
+      allTasks = await apiFetch(API);
+      renderTasks();
+    } catch (e) {
+      showAlert('Could not load tasks: ' + e.message);
+    }
+  }
+
+  // ── Create ────────────────────────────────────────────────────────────────────
+
+  document.getElementById('create-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('inp-title').value.trim();
+    const description = document.getElementById('inp-desc').value.trim();
+    if (!title) { showAlert('Title is required.'); return; }
+    try {
+      const task = await apiFetch(API, {
+        method: 'POST',
+        body: JSON.stringify({ title, description }),
+      });
+      allTasks.unshift(task);
+      renderTasks();
+      e.target.reset();
+      showAlert('Task created!', 'success');
+    } catch (err) {
+      showAlert(err.message);
+    }
+  });
+
+  // ── Toggle completed ──────────────────────────────────────────────────────────
+
+  async function toggleTask(id, completed) {
+    try {
+      const updated = await apiFetch(`${API}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ completed }),
+      });
+      allTasks = allTasks.map(t => t.id === id ? updated : t);
+      renderTasks();
+    } catch (err) {
+      showAlert(err.message);
+      loadTasks(); // refresh to reset checkbox state
+    }
+  }
+
+  // ── Delete ────────────────────────────────────────────────────────────────────
+
+  async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
+    try {
+      await apiFetch(`${API}/${id}`, { method: 'DELETE' });
+      allTasks = allTasks.filter(t => t.id !== id);
+      renderTasks();
+      showAlert('Task deleted.', 'success');
+    } catch (err) {
+      showAlert(err.message);
+    }
+  }
+
+  // ── Edit modal ────────────────────────────────────────────────────────────────
+
+  function openEdit(id) {
+    const task = allTasks.find(t => t.id === id);
+    if (!task) return;
+    document.getElementById('edit-id').value          = task.id;
+    document.getElementById('edit-title').value       = task.title;
+    document.getElementById('edit-desc').value        = task.description;
+    document.getElementById('edit-completed').checked = task.completed;
+    document.getElementById('edit-modal').classList.add('open');
+    document.getElementById('edit-title').focus();
+  }
+
+  function closeEdit() {
+    document.getElementById('edit-modal').classList.remove('open');
+  }
+
+  document.getElementById('edit-cancel').addEventListener('click', closeEdit);
+  document.getElementById('edit-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeEdit();
+  });
+
+  document.getElementById('edit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id          = parseInt(document.getElementById('edit-id').value, 10);
+    const title       = document.getElementById('edit-title').value.trim();
+    const description = document.getElementById('edit-desc').value.trim();
+    const completed   = document.getElementById('edit-completed').checked;
+    if (!title) { showAlert('Title cannot be empty.'); return; }
+    try {
+      const updated = await apiFetch(`${API}/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ title, description, completed }),
+      });
+      allTasks = allTasks.map(t => t.id === id ? updated : t);
+      closeEdit();
+      renderTasks();
+      showAlert('Task updated!', 'success');
+    } catch (err) {
+      showAlert(err.message);
+    }
+  });
+
+  // ── Filters ───────────────────────────────────────────────────────────────────
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderTasks();
+    });
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+
+  loadTasks();
+</script>
+</body>
+</html>
