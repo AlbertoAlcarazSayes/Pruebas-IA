@@ -1,0 +1,31 @@
+{
+  "name": "pruebas-ia",
+  "version": "1.0.0",
+  "description": "Pruebas de IA",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --forceExit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlbertoAlcarazSayes/Pruebas-IA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AlbertoAlcarazSayes/Pruebas-IA/issues"
+  },
+  "homepage": "https://github.com/AlbertoAlcarazSayes/Pruebas-IA#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2"
+  }
+}
